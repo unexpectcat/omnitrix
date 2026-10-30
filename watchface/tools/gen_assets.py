@@ -20,8 +20,8 @@ SIZE = 450                      # watch face coordinate space
 SCALE = 480 / 450               # render resolution per unit
 OUTER_R = SIZE / 2
 R = OUTER_R * 0.95              # face radius inside the bezel
-PORTAL_R = 0.8 * R              # portal rim / tunnel mouth
-RING_SIZE = 512                 # smoke ring image, larger than the face so puffs aren't cut
+PORTAL_R = R                    # tunnel mouth: the portal fills the whole hourglass
+RING_SIZE = 640                 # smoke ring image, larger than the face so puffs aren't cut
 INSIDE_SIZE = 650               # portal fog, oversized so it still fills the portal when tilted
 
 
@@ -107,15 +107,8 @@ def face():
     return to_image(over(out, black))
 
 
-def outside():
-    """Green haze spilling off the rim, fading to darkness toward the face edge."""
-    return to_image(radial(SIZE, (OUTER_R, OUTER_R), 1.35 * R,
-                           [0xFF2E6A0A, 0xFF2E6A0A, 0xFF143004, 0xFF060E02],
-                           [0, PORTAL_R / (1.35 * R), 0.75, 1]))
-
-
 def inside():
-    """Luminous fog inside the portal, brightest at the far end. Moves with tilt, so oversized."""
+    """Luminous fog filling the portal, brightest at the far end. Moves with tilt, so oversized."""
     pr = PORTAL_R
     return to_image(radial(INSIDE_SIZE, (INSIDE_SIZE / 2, INSIDE_SIZE / 2), 1.3 * pr,
                            [0xFFFBFFE0, 0xFFDCFF66, 0xFF9AD82E, 0xFF5AA818, 0xFF3E8410],
@@ -192,11 +185,6 @@ def spill():
                            [0x00D8FF70, 0x00D8FF70, 0x80D8FF70], [0, 0.7, 1]))
 
 
-def circle_points(rad, count=240):
-    return [(OUTER_R + math.cos(k * 2 * math.pi / count) * rad, OUTER_R + math.sin(k * 2 * math.pi / count) * rad)
-            for k in range(count)]
-
-
 def stroke_layer(pts, width, color, blur=0.0):
     n = px(SIZE)
     m = poly_mask(n, pts, width=width)
@@ -228,13 +216,10 @@ def arrow(half_width, tip_r, color):
 
 
 def ambient():
-    """Low-power look: dim outlines of the portal, hourglass and face edge on black."""
+    """Low-power look: dim outlines of the hourglass and face edge on black."""
     n = px(SIZE)
     face_disc = disc_mask(n, OUTER_R, OUTER_R, R)
-    glass = poly_mask(n, hourglass_poly())
-    out = stroke_layer(circle_points(PORTAL_R), 0.012 * R, 0xFF5E8A1A)
-    out[..., 3] *= glass
-    out = over(out, stroke_layer(hourglass_poly(), 0.012 * R, 0xFF3A3A3A))
+    out = stroke_layer(hourglass_poly(), 0.012 * R, 0xFF3A3A3A)
     out[..., 3] *= np.maximum(face_disc, 0)
     ring = disc_mask(n, OUTER_R, OUTER_R, R + 0.006 * R) - disc_mask(n, OUTER_R, OUTER_R, R - 0.006 * R)
     edge = np.zeros_like(out)
@@ -257,12 +242,8 @@ def preview(layers):
             img.alpha_composite(layer)
         return img
 
-    portal = stack(["inside", "smoke_ring", "mist_a", "far_glow", "depth_fog", "spill"])
-    clip = disc_mask(size[0], OUTER_R, OUTER_R, PORTAL_R)
-    portal.putalpha(Image.fromarray((np.asarray(portal.getchannel("A"), np.float32) * clip).astype(np.uint8)))
     img = Image.new("RGBA", size, (0, 0, 0, 255))
-    img.alpha_composite(stack(["outside"]))
-    img.alpha_composite(portal)
+    img.alpha_composite(stack(["inside", "smoke_ring", "mist_a", "far_glow", "depth_fog", "spill"]))
     img.alpha_composite(stack(["face"]))
     # Hands at 10:10, the classic display time.
     img.alpha_composite(stack(["hand_hour"]).rotate(-305, resample=Image.BICUBIC))
@@ -277,7 +258,6 @@ def main():
     os.makedirs(OUT, exist_ok=True)
     layers = {
         "face": face(),
-        "outside": outside(),
         "inside": inside(),
         "smoke_ring": smoke_ring(),
         "depth_fog": depth_fog(),

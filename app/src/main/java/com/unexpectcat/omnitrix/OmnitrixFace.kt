@@ -60,7 +60,6 @@ class OmnitrixFace(context: Context) : SensorEventListener {
     private val faceClip = Path()
     private val hourglass = Path()
     private val hourglassClip = Path()
-    private val portalClip = Path()
     private val alienPath = Path()
     private val alienMatrix = Matrix()
     private val arrow = Path()
@@ -74,7 +73,6 @@ class OmnitrixFace(context: Context) : SensorEventListener {
     private val fogMatrix = Matrix()
     private val mistPaints = Array(2) { Paint(Paint.ANTI_ALIAS_FLAG or Paint.FILTER_BITMAP_FLAG) }
     private val mistMatrix = Matrix()
-    private val outsidePaint = Paint(Paint.ANTI_ALIAS_FLAG)
     private val spillPaint = Paint(Paint.ANTI_ALIAS_FLAG)
     private val tunnelMatrix = Matrix()
     private val puffPaint = Paint(Paint.ANTI_ALIAS_FLAG or Paint.FILTER_BITMAP_FLAG)
@@ -201,21 +199,13 @@ class OmnitrixFace(context: Context) : SensorEventListener {
         hourglassClip.op(faceClip, Path.Op.INTERSECT)
 
         val pr = PORTAL_R * r
-        portalClip.rewind()
-        portalClip.addCircle(0f, 0f, pr, Path.Direction.CW)
 
         grayPaint.shader = RadialGradient(
             0f, 0f, r,
             intArrayOf(0xFFF7F7F5.toInt(), 0xFFEDEDEA.toInt(), 0xFFD6D6D2.toInt()),
             floatArrayOf(0f, 0.7f, 1f), Shader.TileMode.CLAMP,
         )
-        // Around the portal: green haze spilling off the rim, fading into darkness.
-        outsidePaint.shader = RadialGradient(
-            0f, 0f, 1.35f * r,
-            intArrayOf(0xFF2E6A0A.toInt(), 0xFF2E6A0A.toInt(), 0xFF143004.toInt(), 0xFF060E02.toInt()),
-            floatArrayOf(0f, PORTAL_R / 1.35f, 0.75f, 1f), Shader.TileMode.CLAMP,
-        )
-        // Inside the portal: luminous green fog, brightest toward the far light.
+        // The portal: luminous green fog, brightest toward the far light.
         tunnelPaint.shader = RadialGradient(
             0f, 0f, 1.3f * pr,
             intArrayOf(
@@ -368,12 +358,6 @@ class OmnitrixFace(context: Context) : SensorEventListener {
 
     /** Low-power look: outlines only, nothing moving, mostly black pixels. */
     private fun drawAmbient(c: Canvas) {
-        c.save()
-        c.clipPath(hourglassClip)
-        ambientPaint.color = 0xFF5E8A1A.toInt()
-        c.drawCircle(0f, 0f, PORTAL_R * r, ambientPaint)
-        c.restore()
-
         ambientPaint.color = 0xFF3A3A3A.toInt()
         c.save()
         c.clipPath(faceClip)
@@ -398,16 +382,8 @@ class OmnitrixFace(context: Context) : SensorEventListener {
         c.drawCircle(0f, 0f, (outerR + r) / 2f, bezelPaint)
     }
 
+    /** The portal fills the whole hourglass window. */
     private fun drawTunnel(c: Canvas) {
-        c.drawPaint(outsidePaint)
-
-        c.save()
-        c.clipPath(portalClip)
-        drawPortalInside(c)
-        c.restore()
-    }
-
-    private fun drawPortalInside(c: Canvas) {
         tunnelMatrix.setTranslate(vpX, vpY)
         tunnelPaint.shader.setLocalMatrix(tunnelMatrix)
         c.drawPaint(tunnelPaint)
@@ -638,7 +614,7 @@ class OmnitrixFace(context: Context) : SensorEventListener {
         private const val PUFFS = 10
         private const val PUFF_SIZE = 96
         private const val MIST_SIZE = 256
-        private const val PORTAL_R = 0.8f
+        private const val PORTAL_R = 1f
         private const val SELECT_TIMEOUT = 8f
         private const val TRANSFORM_LENGTH = 3.4f
         private const val DEG = (PI / 180).toFloat()
