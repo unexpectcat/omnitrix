@@ -92,13 +92,13 @@ def poly_mask(n, pts, width=0):
 # ---------------------------------------------------------------------------------------- layers
 
 def face():
-    """Pale green-gray face with the hourglass cut out, black hourglass edges and a thin bezel."""
+    """Near-white face with the hourglass cut out, black hourglass edges and a thin bezel."""
     n = px(SIZE)
-    gray = radial(SIZE, (OUTER_R, OUTER_R), R, [0xFFC4D4B0, 0xFFB0C498, 0xFF8EA676], [0, 0.7, 1])
+    gray = radial(SIZE, (OUTER_R, OUTER_R), R, [0xFFF7F7F5, 0xFFEDEDEA, 0xFFD6D6D2], [0, 0.7, 1])
     inside_face = disc_mask(n, OUTER_R, OUTER_R, R)
     glass = poly_mask(n, hourglass_poly())
     gray[..., 3] = inside_face * (1 - glass)
-    border = poly_mask(n, hourglass_poly(), width=0.11 * R) * inside_face
+    border = poly_mask(n, hourglass_poly(), width=0.06 * R) * inside_face
     black = np.zeros_like(gray)
     black[..., 3] = border
     out = over(gray, black)

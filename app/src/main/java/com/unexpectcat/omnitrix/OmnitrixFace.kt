@@ -222,7 +222,7 @@ class OmnitrixFace(context: Context) : SensorEventListener {
 
         grayPaint.shader = RadialGradient(
             0f, 0f, r,
-            intArrayOf(0xFFC4D4B0.toInt(), 0xFFB0C498.toInt(), 0xFF8EA676.toInt()),
+            intArrayOf(0xFFF7F7F5.toInt(), 0xFFEDEDEA.toInt(), 0xFFD6D6D2.toInt()),
             floatArrayOf(0f, 0.7f, 1f), Shader.TileMode.CLAMP,
         )
         // Around the portal: green haze spilling off the rim, fading into darkness.
@@ -273,7 +273,7 @@ class OmnitrixFace(context: Context) : SensorEventListener {
             intArrayOf(0x66B6F020, 0x00B6F020), null, Shader.TileMode.CLAMP,
         )
 
-        borderPaint.strokeWidth = 0.11f * r
+        borderPaint.strokeWidth = 0.06f * r
         bezelPaint.strokeWidth = outerR - r + 2f
         tickPaint.strokeWidth = 0.014f * r
         arrowEdgePaint.strokeWidth = max(1f, 0.008f * r)
