@@ -61,7 +61,6 @@ class OmnitrixFace(context: Context) : SensorEventListener {
     private val hourglass = Path()
     private val hourglassClip = Path()
     private val portalClip = Path()
-    private val rim = Path()
     private val alienPath = Path()
     private val alienMatrix = Matrix()
     private val arrow = Path()
@@ -77,25 +76,10 @@ class OmnitrixFace(context: Context) : SensorEventListener {
     private val mistMatrix = Matrix()
     private val outsidePaint = Paint(Paint.ANTI_ALIAS_FLAG)
     private val spillPaint = Paint(Paint.ANTI_ALIAS_FLAG)
-    private val rimGlowPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
-        style = Paint.Style.STROKE
-        strokeJoin = Paint.Join.ROUND
-        color = 0xFF9CFF3A.toInt()
-    }
-    private val rimPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
-        style = Paint.Style.STROKE
-        strokeJoin = Paint.Join.ROUND
-        color = 0xFFD6FF7A.toInt()
-    }
     private val tunnelMatrix = Matrix()
     private val puffPaint = Paint(Paint.ANTI_ALIAS_FLAG or Paint.FILTER_BITMAP_FLAG)
     private val puffMatrix = Matrix()
     private var puffs: Array<Bitmap> = emptyArray()
-    private val rimCorePaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
-        style = Paint.Style.STROKE
-        strokeJoin = Paint.Join.ROUND
-        color = 0xFFF4FFC4.toInt()
-    }
     private val borderPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
         style = Paint.Style.STROKE
         strokeJoin = Paint.Join.MITER
@@ -246,8 +230,6 @@ class OmnitrixFace(context: Context) : SensorEventListener {
             intArrayOf(0x00D8FF70, 0x00D8FF70, 0x80D8FF70.toInt()),
             floatArrayOf(0f, 0.7f, 1f), Shader.TileMode.CLAMP,
         )
-        rimGlowPaint.strokeWidth = 0.09f * r
-        rimGlowPaint.maskFilter = BlurMaskFilter(0.05f * r, BlurMaskFilter.Blur.NORMAL)
         corePaint.shader = RadialGradient(
             0f, 0f, 0.22f * r,
             intArrayOf(0xFFFFFFF0.toInt(), 0x80F0FF90.toInt(), 0x00D8FF50),
@@ -388,9 +370,8 @@ class OmnitrixFace(context: Context) : SensorEventListener {
     private fun drawAmbient(c: Canvas) {
         c.save()
         c.clipPath(hourglassClip)
-        rimPath(0f, 1f, 0f)
         ambientPaint.color = 0xFF5E8A1A.toInt()
-        c.drawPath(rim, ambientPaint)
+        c.drawCircle(0f, 0f, PORTAL_R * r, ambientPaint)
         c.restore()
 
         ambientPaint.color = 0xFF3A3A3A.toInt()
@@ -424,40 +405,6 @@ class OmnitrixFace(context: Context) : SensorEventListener {
         c.clipPath(portalClip)
         drawPortalInside(c)
         c.restore()
-
-        // Ragged, crackling rim: a blurred halo, then two offset jagged edges and a hot core.
-        val flicker = 0.85f + 0.15f * sin(time * 7.3f) * sin(time * 3.1f)
-        rimPath(0f, 1f)
-        rimGlowPaint.alpha = (flicker * 170).toInt()
-        c.drawPath(rim, rimGlowPaint)
-        rimPaint.strokeWidth = 0.035f * r
-        rimPaint.alpha = (flicker * 235).toInt()
-        c.drawPath(rim, rimPaint)
-        rimPath(2.3f, 1.02f)
-        rimPaint.strokeWidth = 0.012f * r
-        rimPaint.alpha = (flicker * 140).toInt()
-        c.drawPath(rim, rimPaint)
-        rimPath(0f, 1f)
-        rimCorePaint.strokeWidth = 0.012f * r
-        rimCorePaint.alpha = (flicker * 255).toInt()
-        c.drawPath(rim, rimCorePaint)
-    }
-
-    /** Builds the jagged portal edge into [rim]; [phase] decorrelates layers, [scale] nudges the radius. */
-    private fun rimPath(phase: Float, scale: Float, t: Float = time) {
-        val pr = PORTAL_R * r * scale
-        val amp = 0.7f + 0.4f * energy
-        rim.rewind()
-        for (k in 0..RIM_POINTS) {
-            val th = k * 2f * PI.toFloat() / RIM_POINTS
-            val n = 0.022f * sin(9f * th + t * 1.3f + phase) +
-                0.014f * sin(17f * th - t * 2.1f + 2f * phase) +
-                0.009f * sin(31f * th + t * 3.7f) +
-                0.006f * sin(53f * th - t * 5.3f + phase)
-            val rr = pr * (1f + n * amp)
-            if (k == 0) rim.moveTo(cos(th) * rr, sin(th) * rr) else rim.lineTo(cos(th) * rr, sin(th) * rr)
-        }
-        rim.close()
     }
 
     private fun drawPortalInside(c: Canvas) {
@@ -692,7 +639,6 @@ class OmnitrixFace(context: Context) : SensorEventListener {
         private const val PUFF_SIZE = 96
         private const val MIST_SIZE = 256
         private const val PORTAL_R = 0.8f
-        private const val RIM_POINTS = 120
         private const val SELECT_TIMEOUT = 8f
         private const val TRANSFORM_LENGTH = 3.4f
         private const val DEG = (PI / 180).toFloat()

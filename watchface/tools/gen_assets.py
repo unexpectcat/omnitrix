@@ -192,16 +192,9 @@ def spill():
                            [0x00D8FF70, 0x00D8FF70, 0x80D8FF70], [0, 0.7, 1]))
 
 
-def rim_points(phase, scale, t=0.0):
-    pr = PORTAL_R * scale
-    pts = []
-    for k in range(240):
-        th = k * 2 * math.pi / 240
-        nse = (0.022 * math.sin(9 * th + t * 1.3 + phase) + 0.014 * math.sin(17 * th - t * 2.1 + 2 * phase)
-               + 0.009 * math.sin(31 * th + t * 3.7) + 0.006 * math.sin(53 * th - t * 5.3 + phase))
-        rr = pr * (1 + nse)
-        pts.append((OUTER_R + math.cos(th) * rr, OUTER_R + math.sin(th) * rr))
-    return pts
+def circle_points(rad, count=240):
+    return [(OUTER_R + math.cos(k * 2 * math.pi / count) * rad, OUTER_R + math.sin(k * 2 * math.pi / count) * rad)
+            for k in range(count)]
 
 
 def stroke_layer(pts, width, color, blur=0.0):
@@ -215,20 +208,6 @@ def stroke_layer(pts, width, color, blur=0.0):
     out[..., 0], out[..., 1], out[..., 2] = r, g, b
     out[..., 3] = m * a
     return out
-
-
-def rim():
-    """Ragged, glowing portal edge: blurred halo, jagged edge and hot core line."""
-    pts = rim_points(0.0, 1.0)
-    out = stroke_layer(pts, 0.09 * R, 0xAA9CFF3A, blur=0.05 * R)
-    out = over(out, stroke_layer(pts, 0.035 * R, 0xEBD6FF7A))
-    out = over(out, stroke_layer(pts, 0.012 * R, 0xFFF4FFC4))
-    return to_image(out)
-
-
-def rim_crackle():
-    """A second, thinner jagged edge offset from the first; counter-rotates for a crackling look."""
-    return to_image(stroke_layer(rim_points(2.3, 1.02, 4.0), 0.012 * R, 0x8CD6FF7A))
 
 
 def arrow(half_width, tip_r, color):
@@ -249,11 +228,11 @@ def arrow(half_width, tip_r, color):
 
 
 def ambient():
-    """Low-power look: dim outlines of the portal rim, hourglass and face edge on black."""
+    """Low-power look: dim outlines of the portal, hourglass and face edge on black."""
     n = px(SIZE)
     face_disc = disc_mask(n, OUTER_R, OUTER_R, R)
     glass = poly_mask(n, hourglass_poly())
-    out = stroke_layer(rim_points(0.0, 1.0), 0.012 * R, 0xFF5E8A1A)
+    out = stroke_layer(circle_points(PORTAL_R), 0.012 * R, 0xFF5E8A1A)
     out[..., 3] *= glass
     out = over(out, stroke_layer(hourglass_poly(), 0.012 * R, 0xFF3A3A3A))
     out[..., 3] *= np.maximum(face_disc, 0)
@@ -284,8 +263,7 @@ def preview(layers):
     img = Image.new("RGBA", size, (0, 0, 0, 255))
     img.alpha_composite(stack(["outside"]))
     img.alpha_composite(portal)
-    for name in ["rim", "face"]:
-        img.alpha_composite(stack([name]))
+    img.alpha_composite(stack(["face"]))
     # Hands at 10:10, the classic display time.
     img.alpha_composite(stack(["hand_hour"]).rotate(-305, resample=Image.BICUBIC))
     img.alpha_composite(stack(["hand_minute"]).rotate(-60, resample=Image.BICUBIC))
@@ -307,8 +285,6 @@ def main():
         "mist_b": mist(17),
         "far_glow": far_glow(),
         "spill": spill(),
-        "rim": rim(),
-        "rim_crackle": rim_crackle(),
         "hand_hour": arrow(0.035 * R, 0.99 * R, 0xFFFFFFFF),
         "hand_minute": arrow(0.045 * R, 0.965 * R, 0xFFB4F58C),
         "ambient": ambient(),

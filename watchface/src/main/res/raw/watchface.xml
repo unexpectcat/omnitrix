@@ -192,18 +192,6 @@
         </PartImage>
       </Group>
 
-      <!-- Ragged rim: the glowing edge and a thinner crackle turning the other way, flickering. -->
-      <PartImage x="0" y="0" width="450" height="450" pivotX="0.5" pivotY="0.5">
-        <Transform target="angle" value="[SECOND_MILLISECOND] * 6" />
-        <Transform target="alpha" value="217 + 38 * sin([SECOND_MILLISECOND] * 7.3304) * sin([SECOND_MILLISECOND] * 3.1416)" />
-        <Image resource="rim" />
-      </PartImage>
-      <PartImage x="0" y="0" width="450" height="450" pivotX="0.5" pivotY="0.5">
-        <Transform target="angle" value="-[SECOND_MILLISECOND] * 12" />
-        <Transform target="alpha" value="180 + 75 * sin([SECOND_MILLISECOND] * 9.4248)" />
-        <Image resource="rim_crackle" />
-      </PartImage>
-
       <!-- The face itself; tapping anywhere opens the app with the alien selector. -->
       <PartImage x="0" y="0" width="450" height="450">
         <Launch target="com.unexpectcat.omnitrix/com.unexpectcat.omnitrix.MainActivity" />
