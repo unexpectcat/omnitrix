@@ -1,0 +1,7 @@
+<resources>
+    <!-- Swipe-to-dismiss is off so left/right swipes can select aliens; exit with the side button. -->
+    <style name="Theme.Omnitrix" parent="@android:style/Theme.DeviceDefault.NoActionBar">
+        <item name="android:windowSwipeToDismiss">false</item>
+        <item name="android:windowBackground">@android:color/black</item>
+    </style>
+</resources>
