@@ -13,4 +13,4 @@ dependencyResolutionManagement {
     }
 }
 rootProject.name = "Omnitrix"
-include(":app")
+include(":app", ":watchface")

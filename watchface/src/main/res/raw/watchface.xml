@@ -1,0 +1,227 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  Omnitrix watch face (Watch Face Format). Images come from watchface/tools/gen_assets.py.
+
+  The portal's far end swings with tilt like the app: content that sits deep in the tunnel moves
+  with the vanishing point. Each smoke ring is a group shifted by the vanishing point (Gyro), then
+  scaled toward the far end over time, then shifted back inside the scale, so it ends up at
+  vanishingPoint * (1 - scale), the same placement the app uses.
+
+  Animations run off [SECOND_MILLISECOND] with periods that divide 60 s so nothing jumps at the minute.
+-->
+<WatchFace width="450" height="450" clipShape="CIRCLE">
+  <Metadata key="CLOCK_TYPE" value="ANALOG" />
+  <Metadata key="PREVIEW_TIME" value="10:10:30" />
+  <Scene backgroundColor="#ff000000">
+
+    <Group name="awake" x="0" y="0" width="450" height="450">
+      <Variant mode="AMBIENT" target="alpha" value="0" />
+
+      <PartImage x="0" y="0" width="450" height="450">
+        <Image resource="outside" />
+      </PartImage>
+
+      <!-- Everything inside the portal, clipped to its circle. -->
+      <Group name="portal" x="0" y="0" width="450" height="450">
+        <PartDraw x="54" y="54" width="342" height="342" renderMode="MASK">
+          <Ellipse x="0" y="0" width="342" height="342">
+            <Fill color="#ffffffff" />
+          </Ellipse>
+        </PartDraw>
+
+        <Group name="tilt" x="0" y="0" width="450" height="450">
+          <Gyro x="clamp(-[ACCELEROMETER_ANGLE_X] * 3, -85, 85)" y="clamp(([ACCELEROMETER_ANGLE_Y] - 40) * 3, -85, 85)" />
+
+          <PartImage x="-100" y="-100" width="650" height="650">
+            <Image resource="inside" />
+          </PartImage>
+
+          <!-- Smoke ring 0: one tenth of the way further down the tunnel than ring 9. -->
+          <Group name="ring0" x="0" y="0" width="450" height="450" pivotX="0.5" pivotY="0.5">
+            <Transform target="scaleX" value="exp(-3.6 * fract([SECOND_MILLISECOND] / 20 + 0.0))" />
+            <Transform target="scaleY" value="exp(-3.6 * fract([SECOND_MILLISECOND] / 20 + 0.0))" />
+            <Transform target="alpha" value="255 * clamp(fract([SECOND_MILLISECOND] / 20 + 0.0) / 0.08, 0, 1) * clamp((1 - fract([SECOND_MILLISECOND] / 20 + 0.0)) / 0.3, 0, 1) * (1 - 0.4 * fract([SECOND_MILLISECOND] / 20 + 0.0))" />
+            <Group name="ring0_untilt" x="0" y="0" width="450" height="450">
+              <Gyro x="clamp([ACCELEROMETER_ANGLE_X] * 3, -85, 85)" y="clamp((40 - [ACCELEROMETER_ANGLE_Y]) * 3, -85, 85)" />
+              <PartImage x="-31" y="-31" width="512" height="512" pivotX="0.5" pivotY="0.5" angle="0">
+                <Transform target="angle" value="0 + [SECOND_MILLISECOND] * 12" />
+                <Image resource="smoke_ring" />
+              </PartImage>
+            </Group>
+          </Group>
+          <!-- Smoke ring 1: one tenth of the way further down the tunnel than ring 0. -->
+          <Group name="ring1" x="0" y="0" width="450" height="450" pivotX="0.5" pivotY="0.5">
+            <Transform target="scaleX" value="exp(-3.6 * fract([SECOND_MILLISECOND] / 20 + 0.1))" />
+            <Transform target="scaleY" value="exp(-3.6 * fract([SECOND_MILLISECOND] / 20 + 0.1))" />
+            <Transform target="alpha" value="255 * clamp(fract([SECOND_MILLISECOND] / 20 + 0.1) / 0.08, 0, 1) * clamp((1 - fract([SECOND_MILLISECOND] / 20 + 0.1)) / 0.3, 0, 1) * (1 - 0.4 * fract([SECOND_MILLISECOND] / 20 + 0.1))" />
+            <Group name="ring1_untilt" x="0" y="0" width="450" height="450">
+              <Gyro x="clamp([ACCELEROMETER_ANGLE_X] * 3, -85, 85)" y="clamp((40 - [ACCELEROMETER_ANGLE_Y]) * 3, -85, 85)" />
+              <PartImage x="-31" y="-31" width="512" height="512" pivotX="0.5" pivotY="0.5" angle="18">
+                <Transform target="angle" value="18 + [SECOND_MILLISECOND] * -12" />
+                <Image resource="smoke_ring" />
+              </PartImage>
+            </Group>
+          </Group>
+          <!-- Smoke ring 2: one tenth of the way further down the tunnel than ring 1. -->
+          <Group name="ring2" x="0" y="0" width="450" height="450" pivotX="0.5" pivotY="0.5">
+            <Transform target="scaleX" value="exp(-3.6 * fract([SECOND_MILLISECOND] / 20 + 0.2))" />
+            <Transform target="scaleY" value="exp(-3.6 * fract([SECOND_MILLISECOND] / 20 + 0.2))" />
+            <Transform target="alpha" value="255 * clamp(fract([SECOND_MILLISECOND] / 20 + 0.2) / 0.08, 0, 1) * clamp((1 - fract([SECOND_MILLISECOND] / 20 + 0.2)) / 0.3, 0, 1) * (1 - 0.4 * fract([SECOND_MILLISECOND] / 20 + 0.2))" />
+            <Group name="ring2_untilt" x="0" y="0" width="450" height="450">
+              <Gyro x="clamp([ACCELEROMETER_ANGLE_X] * 3, -85, 85)" y="clamp((40 - [ACCELEROMETER_ANGLE_Y]) * 3, -85, 85)" />
+              <PartImage x="-31" y="-31" width="512" height="512" pivotX="0.5" pivotY="0.5" angle="36">
+                <Transform target="angle" value="36 + [SECOND_MILLISECOND] * 12" />
+                <Image resource="smoke_ring" />
+              </PartImage>
+            </Group>
+          </Group>
+          <!-- Smoke ring 3: one tenth of the way further down the tunnel than ring 2. -->
+          <Group name="ring3" x="0" y="0" width="450" height="450" pivotX="0.5" pivotY="0.5">
+            <Transform target="scaleX" value="exp(-3.6 * fract([SECOND_MILLISECOND] / 20 + 0.3))" />
+            <Transform target="scaleY" value="exp(-3.6 * fract([SECOND_MILLISECOND] / 20 + 0.3))" />
+            <Transform target="alpha" value="255 * clamp(fract([SECOND_MILLISECOND] / 20 + 0.3) / 0.08, 0, 1) * clamp((1 - fract([SECOND_MILLISECOND] / 20 + 0.3)) / 0.3, 0, 1) * (1 - 0.4 * fract([SECOND_MILLISECOND] / 20 + 0.3))" />
+            <Group name="ring3_untilt" x="0" y="0" width="450" height="450">
+              <Gyro x="clamp([ACCELEROMETER_ANGLE_X] * 3, -85, 85)" y="clamp((40 - [ACCELEROMETER_ANGLE_Y]) * 3, -85, 85)" />
+              <PartImage x="-31" y="-31" width="512" height="512" pivotX="0.5" pivotY="0.5" angle="54">
+                <Transform target="angle" value="54 + [SECOND_MILLISECOND] * -12" />
+                <Image resource="smoke_ring" />
+              </PartImage>
+            </Group>
+          </Group>
+          <!-- Smoke ring 4: one tenth of the way further down the tunnel than ring 3. -->
+          <Group name="ring4" x="0" y="0" width="450" height="450" pivotX="0.5" pivotY="0.5">
+            <Transform target="scaleX" value="exp(-3.6 * fract([SECOND_MILLISECOND] / 20 + 0.4))" />
+            <Transform target="scaleY" value="exp(-3.6 * fract([SECOND_MILLISECOND] / 20 + 0.4))" />
+            <Transform target="alpha" value="255 * clamp(fract([SECOND_MILLISECOND] / 20 + 0.4) / 0.08, 0, 1) * clamp((1 - fract([SECOND_MILLISECOND] / 20 + 0.4)) / 0.3, 0, 1) * (1 - 0.4 * fract([SECOND_MILLISECOND] / 20 + 0.4))" />
+            <Group name="ring4_untilt" x="0" y="0" width="450" height="450">
+              <Gyro x="clamp([ACCELEROMETER_ANGLE_X] * 3, -85, 85)" y="clamp((40 - [ACCELEROMETER_ANGLE_Y]) * 3, -85, 85)" />
+              <PartImage x="-31" y="-31" width="512" height="512" pivotX="0.5" pivotY="0.5" angle="72">
+                <Transform target="angle" value="72 + [SECOND_MILLISECOND] * 12" />
+                <Image resource="smoke_ring" />
+              </PartImage>
+            </Group>
+          </Group>
+          <!-- Smoke ring 5: one tenth of the way further down the tunnel than ring 4. -->
+          <Group name="ring5" x="0" y="0" width="450" height="450" pivotX="0.5" pivotY="0.5">
+            <Transform target="scaleX" value="exp(-3.6 * fract([SECOND_MILLISECOND] / 20 + 0.5))" />
+            <Transform target="scaleY" value="exp(-3.6 * fract([SECOND_MILLISECOND] / 20 + 0.5))" />
+            <Transform target="alpha" value="255 * clamp(fract([SECOND_MILLISECOND] / 20 + 0.5) / 0.08, 0, 1) * clamp((1 - fract([SECOND_MILLISECOND] / 20 + 0.5)) / 0.3, 0, 1) * (1 - 0.4 * fract([SECOND_MILLISECOND] / 20 + 0.5))" />
+            <Group name="ring5_untilt" x="0" y="0" width="450" height="450">
+              <Gyro x="clamp([ACCELEROMETER_ANGLE_X] * 3, -85, 85)" y="clamp((40 - [ACCELEROMETER_ANGLE_Y]) * 3, -85, 85)" />
+              <PartImage x="-31" y="-31" width="512" height="512" pivotX="0.5" pivotY="0.5" angle="90">
+                <Transform target="angle" value="90 + [SECOND_MILLISECOND] * -12" />
+                <Image resource="smoke_ring" />
+              </PartImage>
+            </Group>
+          </Group>
+          <!-- Smoke ring 6: one tenth of the way further down the tunnel than ring 5. -->
+          <Group name="ring6" x="0" y="0" width="450" height="450" pivotX="0.5" pivotY="0.5">
+            <Transform target="scaleX" value="exp(-3.6 * fract([SECOND_MILLISECOND] / 20 + 0.6))" />
+            <Transform target="scaleY" value="exp(-3.6 * fract([SECOND_MILLISECOND] / 20 + 0.6))" />
+            <Transform target="alpha" value="255 * clamp(fract([SECOND_MILLISECOND] / 20 + 0.6) / 0.08, 0, 1) * clamp((1 - fract([SECOND_MILLISECOND] / 20 + 0.6)) / 0.3, 0, 1) * (1 - 0.4 * fract([SECOND_MILLISECOND] / 20 + 0.6))" />
+            <Group name="ring6_untilt" x="0" y="0" width="450" height="450">
+              <Gyro x="clamp([ACCELEROMETER_ANGLE_X] * 3, -85, 85)" y="clamp((40 - [ACCELEROMETER_ANGLE_Y]) * 3, -85, 85)" />
+              <PartImage x="-31" y="-31" width="512" height="512" pivotX="0.5" pivotY="0.5" angle="108">
+                <Transform target="angle" value="108 + [SECOND_MILLISECOND] * 12" />
+                <Image resource="smoke_ring" />
+              </PartImage>
+            </Group>
+          </Group>
+          <!-- Smoke ring 7: one tenth of the way further down the tunnel than ring 6. -->
+          <Group name="ring7" x="0" y="0" width="450" height="450" pivotX="0.5" pivotY="0.5">
+            <Transform target="scaleX" value="exp(-3.6 * fract([SECOND_MILLISECOND] / 20 + 0.7))" />
+            <Transform target="scaleY" value="exp(-3.6 * fract([SECOND_MILLISECOND] / 20 + 0.7))" />
+            <Transform target="alpha" value="255 * clamp(fract([SECOND_MILLISECOND] / 20 + 0.7) / 0.08, 0, 1) * clamp((1 - fract([SECOND_MILLISECOND] / 20 + 0.7)) / 0.3, 0, 1) * (1 - 0.4 * fract([SECOND_MILLISECOND] / 20 + 0.7))" />
+            <Group name="ring7_untilt" x="0" y="0" width="450" height="450">
+              <Gyro x="clamp([ACCELEROMETER_ANGLE_X] * 3, -85, 85)" y="clamp((40 - [ACCELEROMETER_ANGLE_Y]) * 3, -85, 85)" />
+              <PartImage x="-31" y="-31" width="512" height="512" pivotX="0.5" pivotY="0.5" angle="126">
+                <Transform target="angle" value="126 + [SECOND_MILLISECOND] * -12" />
+                <Image resource="smoke_ring" />
+              </PartImage>
+            </Group>
+          </Group>
+          <!-- Smoke ring 8: one tenth of the way further down the tunnel than ring 7. -->
+          <Group name="ring8" x="0" y="0" width="450" height="450" pivotX="0.5" pivotY="0.5">
+            <Transform target="scaleX" value="exp(-3.6 * fract([SECOND_MILLISECOND] / 20 + 0.8))" />
+            <Transform target="scaleY" value="exp(-3.6 * fract([SECOND_MILLISECOND] / 20 + 0.8))" />
+            <Transform target="alpha" value="255 * clamp(fract([SECOND_MILLISECOND] / 20 + 0.8) / 0.08, 0, 1) * clamp((1 - fract([SECOND_MILLISECOND] / 20 + 0.8)) / 0.3, 0, 1) * (1 - 0.4 * fract([SECOND_MILLISECOND] / 20 + 0.8))" />
+            <Group name="ring8_untilt" x="0" y="0" width="450" height="450">
+              <Gyro x="clamp([ACCELEROMETER_ANGLE_X] * 3, -85, 85)" y="clamp((40 - [ACCELEROMETER_ANGLE_Y]) * 3, -85, 85)" />
+              <PartImage x="-31" y="-31" width="512" height="512" pivotX="0.5" pivotY="0.5" angle="144">
+                <Transform target="angle" value="144 + [SECOND_MILLISECOND] * 12" />
+                <Image resource="smoke_ring" />
+              </PartImage>
+            </Group>
+          </Group>
+          <!-- Smoke ring 9: one tenth of the way further down the tunnel than ring 8. -->
+          <Group name="ring9" x="0" y="0" width="450" height="450" pivotX="0.5" pivotY="0.5">
+            <Transform target="scaleX" value="exp(-3.6 * fract([SECOND_MILLISECOND] / 20 + 0.9))" />
+            <Transform target="scaleY" value="exp(-3.6 * fract([SECOND_MILLISECOND] / 20 + 0.9))" />
+            <Transform target="alpha" value="255 * clamp(fract([SECOND_MILLISECOND] / 20 + 0.9) / 0.08, 0, 1) * clamp((1 - fract([SECOND_MILLISECOND] / 20 + 0.9)) / 0.3, 0, 1) * (1 - 0.4 * fract([SECOND_MILLISECOND] / 20 + 0.9))" />
+            <Group name="ring9_untilt" x="0" y="0" width="450" height="450">
+              <Gyro x="clamp([ACCELEROMETER_ANGLE_X] * 3, -85, 85)" y="clamp((40 - [ACCELEROMETER_ANGLE_Y]) * 3, -85, 85)" />
+              <PartImage x="-31" y="-31" width="512" height="512" pivotX="0.5" pivotY="0.5" angle="162">
+                <Transform target="angle" value="162 + [SECOND_MILLISECOND] * -12" />
+                <Image resource="smoke_ring" />
+              </PartImage>
+            </Group>
+          </Group>
+
+          <!-- Two layers of mist swirling in opposite directions around the far end. -->
+          <PartImage x="0" y="0" width="450" height="450" pivotX="0.5" pivotY="0.5" alpha="150">
+            <Transform target="angle" value="[SECOND_MILLISECOND] * 6" />
+            <Image resource="mist_a" />
+          </PartImage>
+          <PartImage x="0" y="0" width="450" height="450" pivotX="0.5" pivotY="0.5" alpha="130" scaleX="0.85" scaleY="0.85">
+            <Transform target="angle" value="40 - [SECOND_MILLISECOND] * 6" />
+            <Image resource="mist_b" />
+          </PartImage>
+
+          <!-- Fog thickening toward the far end, then the pulsing far light. -->
+          <PartImage x="0" y="0" width="450" height="450">
+            <Image resource="depth_fog" />
+          </PartImage>
+          <PartImage x="0" y="0" width="450" height="450">
+            <Transform target="alpha" value="204 + 51 * sin([SECOND_MILLISECOND] * 2.5133)" />
+            <Image resource="far_glow" />
+          </PartImage>
+        </Group>
+
+        <PartImage x="0" y="0" width="450" height="450">
+          <Image resource="spill" />
+        </PartImage>
+      </Group>
+
+      <!-- Ragged rim: the glowing edge and a thinner crackle turning the other way, flickering. -->
+      <PartImage x="0" y="0" width="450" height="450" pivotX="0.5" pivotY="0.5">
+        <Transform target="angle" value="[SECOND_MILLISECOND] * 6" />
+        <Transform target="alpha" value="217 + 38 * sin([SECOND_MILLISECOND] * 7.3304) * sin([SECOND_MILLISECOND] * 3.1416)" />
+        <Image resource="rim" />
+      </PartImage>
+      <PartImage x="0" y="0" width="450" height="450" pivotX="0.5" pivotY="0.5">
+        <Transform target="angle" value="-[SECOND_MILLISECOND] * 12" />
+        <Transform target="alpha" value="180 + 75 * sin([SECOND_MILLISECOND] * 9.4248)" />
+        <Image resource="rim_crackle" />
+      </PartImage>
+
+      <!-- The face itself; tapping anywhere opens the app with the alien selector. -->
+      <PartImage x="0" y="0" width="450" height="450">
+        <Launch target="com.unexpectcat.omnitrix/com.unexpectcat.omnitrix.MainActivity" />
+        <Image resource="face" />
+      </PartImage>
+    </Group>
+
+    <Group name="ambient" x="0" y="0" width="450" height="450" alpha="0">
+      <Variant mode="AMBIENT" target="alpha" value="255" />
+      <PartImage x="0" y="0" width="450" height="450">
+        <Image resource="ambient" />
+      </PartImage>
+    </Group>
+
+    <!-- Time: white hour arrow and light green minute arrow on the bezel. -->
+    <AnalogClock x="0" y="0" width="450" height="450">
+      <HourHand resource="hand_hour" x="0" y="0" width="450" height="450" pivotX="0.5" pivotY="0.5" />
+      <MinuteHand resource="hand_minute" x="0" y="0" width="450" height="450" pivotX="0.5" pivotY="0.5" />
+    </AnalogClock>
+  </Scene>
+</WatchFace>
