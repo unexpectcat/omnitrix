@@ -32,7 +32,7 @@ import kotlin.math.sqrt
 import kotlin.random.Random
 
 /**
- * The Omnitrix face, shared by the watch face and the launcher app. Idle: the hourglass is a window
+ * The Omnitrix face as drawn by the app. Idle: the hourglass is a window
  * into a glowing portal whose vanishing point swings with the watch's tilt (gravity sensor) and
  * wrist motion (gyroscope); two arrows on the bezel tell the time. Tap to bring up the alien
  * hologram, tap the sides to cycle aliens, tap the middle to transform.
@@ -60,7 +60,6 @@ class OmnitrixFace(context: Context) : SensorEventListener {
     private val faceClip = Path()
     private val hourglass = Path()
     private val hourglassClip = Path()
-    private val ring = Path()
     private val portalClip = Path()
     private val rim = Path()
     private val alienPath = Path()
@@ -89,14 +88,12 @@ class OmnitrixFace(context: Context) : SensorEventListener {
         color = 0xFFD6FF7A.toInt()
     }
     private val tunnelMatrix = Matrix()
-    private val ringPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+    private val puffPaint = Paint(Paint.ANTI_ALIAS_FLAG or Paint.FILTER_BITMAP_FLAG)
+    private val puffMatrix = Matrix()
+    private var puffs: Array<Bitmap> = emptyArray()
+    private val rimCorePaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
         style = Paint.Style.STROKE
         strokeJoin = Paint.Join.ROUND
-        color = 0xFFE9FF86.toInt()
-    }
-    private val streakPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
-        style = Paint.Style.STROKE
-        strokeCap = Paint.Cap.ROUND
         color = 0xFFF4FFC4.toInt()
     }
     private val borderPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
@@ -152,10 +149,6 @@ class OmnitrixFace(context: Context) : SensorEventListener {
     private var restKnown = false
     private var energy = 0.3f       // wobble and speed driver, pumped by gyroscope motion
 
-    private val rnd = Random(10)
-    private val streakAngle = FloatArray(STREAKS) { rnd.nextFloat() * 2f * PI.toFloat() }
-    private val streakSeed = FloatArray(STREAKS) { rnd.nextFloat() }
-    private val streakSpeed = FloatArray(STREAKS) { 0.8f + rnd.nextFloat() * 0.8f }
 
     // ---- sensors / input ----
     private val sensorManager = context.getSystemService(SensorManager::class.java)
@@ -206,7 +199,7 @@ class OmnitrixFace(context: Context) : SensorEventListener {
         cx = w / 2f
         cy = h / 2f
         outerR = min(w, h) / 2f
-        r = outerR * 0.9f
+        r = outerR * 0.95f
 
         faceClip.rewind()
         faceClip.addCircle(0f, 0f, r, Path.Direction.CW)
@@ -229,7 +222,7 @@ class OmnitrixFace(context: Context) : SensorEventListener {
 
         grayPaint.shader = RadialGradient(
             0f, 0f, r,
-            intArrayOf(0xFF8E8F8B.toInt(), 0xFF7C7D7A.toInt(), 0xFF5E5F5C.toInt()),
+            intArrayOf(0xFFC4D4B0.toInt(), 0xFFB0C498.toInt(), 0xFF8EA676.toInt()),
             floatArrayOf(0f, 0.7f, 1f), Shader.TileMode.CLAMP,
         )
         // Around the portal: green haze spilling off the rim, fading into darkness.
@@ -272,6 +265,7 @@ class OmnitrixFace(context: Context) : SensorEventListener {
             intArrayOf(0x38F4FFC4, 0x24E9FF86, 0x00E9FF86),
             floatArrayOf(0f, 0.6f, 1f), Shader.TileMode.CLAMP,
         )
+        puffs = Array(3) { smokePuff(Random(40 + it)) }
         mistPaints[0].shader = mistShader(Random(3))
         mistPaints[1].shader = mistShader(Random(17))
         haloPaint.shader = RadialGradient(
@@ -365,8 +359,8 @@ class OmnitrixFace(context: Context) : SensorEventListener {
         }
         val minuteAngle = (minute + second / 60f) * 6f
         val hourAngle = (hour % 12 + minute / 60f) * 30f
-        drawArrow(canvas, hourAngle, 0.035f * r, 0.995f * r, if (ambient) 0xFF9A9A9A.toInt() else 0xFFF4FFC4.toInt(), ambient)
-        drawArrow(canvas, minuteAngle, 0.05f * r, 0.965f * r, if (ambient) Color.WHITE else LIME, ambient)
+        drawArrow(canvas, hourAngle, 0.035f * r, 0.99f * r, if (ambient) 0xFFB0B0B0.toInt() else Color.WHITE, ambient)
+        drawArrow(canvas, minuteAngle, 0.045f * r, 0.965f * r, if (ambient) 0xFF8FB872.toInt() else MINUTE_GREEN, ambient)
         canvas.restore()
     }
 
@@ -444,9 +438,9 @@ class OmnitrixFace(context: Context) : SensorEventListener {
         rimPaint.alpha = (flicker * 140).toInt()
         c.drawPath(rim, rimPaint)
         rimPath(0f, 1f)
-        streakPaint.strokeWidth = 0.012f * r
-        streakPaint.alpha = (flicker * 255).toInt()
-        c.drawPath(rim, streakPaint)
+        rimCorePaint.strokeWidth = 0.012f * r
+        rimCorePaint.alpha = (flicker * 255).toInt()
+        c.drawPath(rim, rimCorePaint)
     }
 
     /** Builds the jagged portal edge into [rim]; [phase] decorrelates layers, [scale] nudges the radius. */
@@ -473,23 +467,7 @@ class OmnitrixFace(context: Context) : SensorEventListener {
 
         val mouth = PORTAL_R * r
 
-        // Light streaks rushing down the tunnel walls.
-        for (i in 0 until STREAKS) {
-            val d = frac(streakSeed[i] + flow * 0.18f * streakSpeed[i])
-            val s0 = depthScale(d)
-            val s1 = depthScale(d + 0.12f)
-            val ca = cos(streakAngle[i])
-            val sa = sin(streakAngle[i])
-            streakPaint.strokeWidth = max(1f, 0.018f * r * s0)
-            streakPaint.alpha = (fade(d) * 150).toInt()
-            c.drawLine(
-                vpX * (1f - s0) + ca * mouth * s0, vpY * (1f - s0) + sa * mouth * s0,
-                vpX * (1f - s1) + ca * mouth * s1, vpY * (1f - s1) + sa * mouth * s1,
-                streakPaint,
-            )
-        }
-
-        // Energy rings receding forever: each one shrinks toward the far end and wraps back to the glass.
+        // Rings of smoke clouds receding forever: each shrinks toward the far end and wraps back to the glass.
         // Drawn far to near, each with a veil of fog, so deeper rings sit behind more fog.
         val wobble = 0.006f + 0.028f * energy
         val farthest = (RINGS - 1 - kotlin.math.floor(flow).toInt()).mod(RINGS)
@@ -500,24 +478,22 @@ class OmnitrixFace(context: Context) : SensorEventListener {
             val rad = mouth * s
             val ox = vpX * (1f - s)
             val oy = vpY * (1f - s)
-            ring.rewind()
-            for (k in 0..RING_POINTS) {
-                val th = k * 2f * PI.toFloat() / RING_POINTS
-                val rr = rad * (1f + wobble * sin(4f * th + i * 1.7f + time * 2.2f) +
-                    wobble * 0.5f * sin(7f * th - time * 3.1f + i) +
-                    wobble * 0.35f * sin(13f * th + time * 4.3f + 2f * i))
-                val x = ox + cos(th) * rr
-                val y = oy + sin(th) * rr
-                if (k == 0) ring.moveTo(x, y) else ring.lineTo(x, y)
-            }
             val a = fade(d)
-            val w = max(1f, 0.045f * r * s)
-            ringPaint.strokeWidth = w * 3f
-            ringPaint.alpha = (a * 50).toInt()
-            c.drawPath(ring, ringPaint)
-            ringPaint.strokeWidth = w
-            ringPaint.alpha = (a * 220).toInt()
-            c.drawPath(ring, ringPaint)
+            // Neighbouring rings drift in opposite directions so the smoke churns.
+            val drift = time * 0.25f * if (i % 2 == 0) 1f else -1f
+            val size = rad * 0.8f
+            puffPaint.alpha = (a * 200).toInt()
+            for (j in 0 until PUFFS) {
+                val th = (j + 0.5f * (i % 2)) * 2f * PI.toFloat() / PUFFS + drift
+                val rr = rad * (1f + wobble * sin(4f * th + i * 1.7f + time * 2.2f) +
+                    wobble * 0.5f * sin(7f * th - time * 3.1f + i))
+                val puff = puffs[(i + j) % puffs.size]
+                puffMatrix.setTranslate(-puff.width / 2f, -puff.height / 2f)
+                puffMatrix.postScale(size / puff.width, size / puff.width)
+                puffMatrix.postRotate(th / DEG + time * if (j % 2 == 0) 15f else -15f)
+                puffMatrix.postTranslate(ox + cos(th) * rr, oy + sin(th) * rr)
+                c.drawBitmap(puff, puffMatrix, puffPaint)
+            }
 
             fogMatrix.setScale(s * mouth / r, s * mouth / r)
             fogMatrix.postTranslate(ox, oy)
@@ -547,6 +523,26 @@ class OmnitrixFace(context: Context) : SensorEventListener {
         c.drawCircle(vpX, vpY, 0.22f * r, corePaint)
 
         c.drawCircle(0f, 0f, mouth, spillPaint)
+    }
+
+    /** One cloud of smoke: a few overlapping soft blobs, brightest where they pile up. */
+    private fun smokePuff(rnd: Random): Bitmap {
+        val bmp = Bitmap.createBitmap(PUFF_SIZE, PUFF_SIZE, Bitmap.Config.ARGB_8888)
+        val bc = Canvas(bmp)
+        val blob = Paint(Paint.ANTI_ALIAS_FLAG)
+        val half = PUFF_SIZE / 2f
+        repeat(7) {
+            val ang = rnd.nextFloat() * 2f * PI.toFloat()
+            val dist = rnd.nextFloat() * 0.2f * PUFF_SIZE
+            val br = (0.14f + rnd.nextFloat() * 0.14f) * PUFF_SIZE
+            val bx = half + cos(ang) * dist
+            val by = half + sin(ang) * dist
+            blob.shader = RadialGradient(
+                bx, by, br, intArrayOf(0x58F0FFC8, 0x00F0FFC8), null, Shader.TileMode.CLAMP,
+            )
+            bc.drawCircle(bx, by, br, blob)
+        }
+        return bmp
     }
 
     /** Soft blobs of mist, denser toward the middle, fading to nothing before the bitmap edge. */
@@ -689,10 +685,11 @@ class OmnitrixFace(context: Context) : SensorEventListener {
 
     companion object {
         private const val LIME = 0xFFC6F432.toInt()
+        private const val MINUTE_GREEN = 0xFFB4F58C.toInt()
         private const val MAX_SWING = 0.4f
         private const val RINGS = 14
-        private const val RING_POINTS = 48
-        private const val STREAKS = 28
+        private const val PUFFS = 10
+        private const val PUFF_SIZE = 96
         private const val MIST_SIZE = 256
         private const val PORTAL_R = 0.8f
         private const val RIM_POINTS = 120
